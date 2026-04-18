@@ -8,7 +8,7 @@ def build_quiz_prompt(text_chunk, config):
     include_explanations = config.get('include_explanations', True)
 
     prompt = f"""
-You are an expert educator and quiz generator. Your task is to generate a quiz based strictly on the provided text.
+You are BrainBlitz AI, an expert educator and quiz generator. Your task is to generate a quiz based strictly on the provided text.
 
 TEXT TO BASE QUIZ ON:
 {text_chunk}

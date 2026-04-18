@@ -43,7 +43,7 @@ def call_openrouter(prompt, model=None):
             "Authorization": f"Bearer {OPENROUTER_API_KEY}",
             "Content-Type": "application/json",
             "HTTP-Referer": "http://localhost:5000",
-            "X-Title": "AI Quiz Generator"
+            "X-Title": "BrainBlitz AI"
         }
         
         payload = {

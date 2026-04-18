@@ -1,4 +1,4 @@
-# AI Quiz Generator 🧠
+# BrainBlitz AI 🧠
 
 A full-stack, AI-powered quiz generator that transforms raw text and documents into interactive quizzes instantly. Built with Python Flask, Vanilla JS, and OpenRouter API. Perfect for students and educators!
 

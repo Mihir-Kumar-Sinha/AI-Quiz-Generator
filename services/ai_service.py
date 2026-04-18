@@ -7,14 +7,23 @@ import time
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-# Ordered list of free models to try as fallbacks
+# Ordered list of free models to try as fallbacks (broad list for resilience)
 FREE_MODELS = [
-    "meta-llama/llama-3.3-70b-instruct:free",
     "google/gemma-3-27b-it:free",
     "google/gemma-3-12b-it:free",
+    "meta-llama/llama-3.3-70b-instruct:free",
+    "google/gemma-4-31b-it:free",
+    "google/gemma-4-26b-a4b-it:free",
+    "nvidia/nemotron-nano-9b-v2:free",
+    "openai/gpt-oss-20b:free",
+    "openai/gpt-oss-120b:free",
     "qwen/qwen3-coder:free",
+    "nvidia/nemotron-3-nano-30b-a3b:free",
+    "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
+    "z-ai/glm-4.5-air:free",
     "nousresearch/hermes-3-llama-3.1-405b:free",
     "meta-llama/llama-3.2-3b-instruct:free",
+    "google/gemma-3n-e4b-it:free",
 ]
 
 def call_openrouter(prompt, model=None):

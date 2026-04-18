@@ -58,7 +58,7 @@ def handle_generate_quiz():
         'num_options': data.get('numOpts', 4),
         'include_answers': data.get('incAns', True),
         'include_explanations': data.get('incExp', True),
-        'model': data.get('model', 'google/gemma-3-12b-it:free')
+        'model': data.get('model', 'meta-llama/llama-3.3-70b-instruct:free')
     }
     
     try:

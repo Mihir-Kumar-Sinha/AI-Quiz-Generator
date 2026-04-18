@@ -31,7 +31,7 @@ def generate_quiz(text, config):
         prompt = build_quiz_prompt(chunk, chunk_config)
         
         # We can specify model here if we want or just pass it in config
-        model = config.get('model', 'google/gemma-3-12b-it:free')
+        model = config.get('model', 'meta-llama/llama-3.3-70b-instruct:free')
         
         chunk_response = call_openrouter(prompt, model=model)
         

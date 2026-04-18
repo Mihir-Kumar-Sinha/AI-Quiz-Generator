@@ -2,51 +2,87 @@ import os
 import requests
 import json
 import re
+import time
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-def call_openrouter(prompt, model="google/gemma-3-12b-it:free"):
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "Content-Type": "application/json",
-        "HTTP-Referer": "http://localhost:5000",
-        "X-Title": "AI Quiz Generator"
-    }
+# Ordered list of free models to try as fallbacks
+FREE_MODELS = [
+    "meta-llama/llama-3.3-70b-instruct:free",
+    "google/gemma-3-27b-it:free",
+    "google/gemma-3-12b-it:free",
+    "qwen/qwen3-coder:free",
+    "nousresearch/hermes-3-llama-3.1-405b:free",
+    "meta-llama/llama-3.2-3b-instruct:free",
+]
+
+def call_openrouter(prompt, model=None):
+    """Call OpenRouter API with automatic model fallback on 429 rate-limit errors."""
     
-    data = {
-        "model": model,
-        "messages": [
-            {"role": "user", "content": prompt}
-        ]
-    }
+    if model and model not in FREE_MODELS:
+        models_to_try = [model] + FREE_MODELS
+    else:
+        models_to_try = list(FREE_MODELS)
+
+    last_error = None
     
-    try:
-        response = requests.post(API_URL, headers=headers, json=data)
-        response.raise_for_status()
+    for current_model in models_to_try:
+        print(f"Trying model: {current_model}", flush=True)
         
-        result_json = response.json()
-        if 'choices' in result_json and len(result_json['choices']) > 0:
-            content = result_json['choices'][0]['message']['content']
-            return extract_json_from_response(content)
-        else:
-            print(f"Unexpected API response structure: {result_json}", flush=True)
-            return {"error": f"Unexpected API response: {json.dumps(result_json)}"}
+        headers = {
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "http://localhost:5000",
+            "X-Title": "AI Quiz Generator"
+        }
+        
+        payload = {
+            "model": current_model,
+            "messages": [
+                {"role": "user", "content": prompt}
+            ]
+        }
+        
+        try:
+            response = requests.post(API_URL, headers=headers, json=payload, timeout=60)
             
-    except requests.exceptions.HTTPError as e:
-        status_code = e.response.status_code if e.response else None
-        if status_code == 429:
-            error_msg = "API Rate Limit Exceeded (429). The OpenRouter API key has run out of requests or credits. Please wait or try a different key."
-        elif status_code == 402:
-            error_msg = "Payment Required (402). The OpenRouter API key has run out of credits for this model."
-        else:
-            error_msg = f"API Request failed: {e.response.text if e.response else e}"
-        print(error_msg, flush=True)
-        return {"error": error_msg}
-    except requests.exceptions.RequestException as e:
-        error_msg = f"API Request failed: {e}"
-        print(error_msg, flush=True)
-        return {"error": error_msg}
+            # Check for rate-limit or payment errors BEFORE raise_for_status
+            if response.status_code == 429:
+                print(f"Rate limited (429) on model {current_model}, trying next...", flush=True)
+                last_error = f"Rate limited on {current_model}"
+                time.sleep(2)
+                continue
+            
+            if response.status_code == 402:
+                print(f"Payment required (402) on model {current_model}, trying next...", flush=True)
+                last_error = f"Payment required on {current_model}"
+                continue
+            
+            response.raise_for_status()
+            
+            result_json = response.json()
+            if 'choices' in result_json and len(result_json['choices']) > 0:
+                content = result_json['choices'][0]['message']['content']
+                print(f"Success with model: {current_model}", flush=True)
+                return extract_json_from_response(content)
+            else:
+                print(f"Unexpected API response structure: {result_json}", flush=True)
+                return {"error": f"Unexpected API response: {json.dumps(result_json)}"}
+                
+        except requests.exceptions.Timeout:
+            print(f"Timeout on model {current_model}, trying next...", flush=True)
+            last_error = f"Timeout on {current_model}"
+            continue
+        except requests.exceptions.RequestException as e:
+            error_msg = f"API Request failed: {e}"
+            print(error_msg, flush=True)
+            return {"error": error_msg}
+    
+    # All models exhausted
+    error_msg = "All free AI models are currently rate-limited. Please wait a minute and try again."
+    print(error_msg, flush=True)
+    return {"error": error_msg}
 
 def extract_json_from_response(content):
     print(f"Raw content from AI: {content}", flush=True)
